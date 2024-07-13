@@ -1,104 +1,20 @@
-/*#include <IRremote.h>
-
-const int RECV_PIN = 11;
-
-void setup()
-{
-  Serial.begin(9600);
-  // Enable the IR Receiver
-  IrReceiver.begin(RECV_PIN, DISABLE_LED_FEEDBACK);
-}
-
-void loop()
-{
-  if (IrReceiver.decode())
-  {
-    // Print Code in HEX
-    switch (IrReceiver.decodedIRData.decodedRawData)
-    {
-    case 0xBA45FF00:
-      Serial.println("POWER");
-      break;
-    case 0xB847FF00:
-      Serial.println("FUNC/STOP");
-      break;
-    case 0xB946FF00:
-      Serial.println("VOL+");
-      break;
-    case 0xBB44FF00:
-      Serial.println("FAST BACK");
-      break;
-    case 0xBF40FF00:
-      Serial.println("PAUSE");
-      break;
-    case 0xBC43FF00:
-      Serial.println("FAST FORWARD");
-      break;
-    case 0xF807FF00:
-      Serial.println("DOWN");
-      break;
-    case 0xEA15FF00:
-      Serial.println("VOL-");
-      break;
-    case 0xF609FF00:
-      Serial.println("UP");
-      break;
-    case 0xE619FF00:
-      Serial.println("EQ");
-      break;
-    case 0xF20DFF00:
-      Serial.println("ST/REPT");
-      break;
-    case 0xE916FF00:
-      Serial.println("0");
-      break;
-    case 0xF30CFF00:
-      Serial.println("1");
-      break;
-    case 0xE718FF00:
-      Serial.println("2");
-      break;
-    case 0xA15EFF00:
-      Serial.println("3");
-      break;
-    case 0xF708FF00:
-      Serial.println("4");
-      break;
-    case 0xE31CFF00:
-      Serial.println("5");
-      break;
-    case 0xA55AFF00:
-      Serial.println("6");
-      break;
-    case 0xBD42FF00:
-      Serial.println("7");
-      break;
-    case 0xAD52FF00:
-      Serial.println("8");
-      break;
-    case 0xB54AFF00:
-      Serial.println("9");
-      break;
-    default:
-      Serial.println("other button");
-    }
-    IrReceiver.resume();
-  }
-}*/
 #define IR_USE_AVR_TIMER1
 
+#include <StandardCplusplus.h>
 #include <Arduino.h>
 #include <IRremote.h>
+#include <vector>
 
 unsigned long currentMillis;
 unsigned long previousMillis = 0;
 
-int doorPin = 2;
 const int RECV_PIN = 11;
+std::vector<int> code;
+const int combination = 2749;
+
+int doorPin = 2;
 bool reedState;
 
-int resetPin = 3;
-bool resetState;
 bool opened = false;
 
 // notes in the melody:
@@ -111,9 +27,8 @@ unsigned int toneDuration = 500;
 void setup()
 {
   pinMode(doorPin, INPUT);
-  pinMode(resetPin, INPUT);
 
-  Serial.begin(9600);
+  // Serial.begin(9600);
   IrReceiver.begin(RECV_PIN);
 }
 
@@ -122,93 +37,82 @@ void loop()
   currentMillis = millis();
 
   reedState = digitalRead(doorPin);
-  resetState = digitalRead(resetPin);
+
+  // if (code.size() == 1)
+  //   Serial.println(code[0]);
+  // else if (code.size() == 2)
+  //   Serial.println(code[0] * 10 + code[1]);
+  // else if (code.size() == 3)
+  //   Serial.println(code[0] * 100 + code[1] * 10 + code[2]);
+  // else if (code.size() == 4)
+  //   Serial.println(code[0] * 1000 + code[1] * 100 + code[2] * 10 + code[3]);
 
   // N.C. Reed Switch
-  if (opened && resetState && reedState)
-  {
-    opened = false;
-  }
-  if (opened && IrReceiver.decode())
-  {
-    // Print Code in HEX
-    switch (IrReceiver.decodedIRData.decodedRawData)
-    {
-    case 0xBA45FF00:
-      Serial.println("POWER");
-      break;
-    case 0xB847FF00:
-      Serial.println("FUNC/STOP");
-      break;
-    case 0xB946FF00:
-      Serial.println("VOL+");
-      break;
-    case 0xBB44FF00:
-      Serial.println("FAST BACK");
-      break;
-    case 0xBF40FF00:
-      Serial.println("PAUSE");
-      break;
-    case 0xBC43FF00:
-      Serial.println("FAST FORWARD");
-      break;
-    case 0xF807FF00:
-      Serial.println("DOWN");
-      break;
-    case 0xEA15FF00:
-      Serial.println("VOL-");
-      break;
-    case 0xF609FF00:
-      Serial.println("UP");
-      break;
-    case 0xE619FF00:
-      Serial.println("EQ");
-      break;
-    case 0xF20DFF00:
-      Serial.println("ST/REPT");
-      break;
-    case 0xE916FF00:
-      Serial.println("0");
-      break;
-    case 0xF30CFF00:
-      Serial.println("1");
-      break;
-    case 0xE718FF00:
-      Serial.println("2");
-      break;
-    case 0xA15EFF00:
-      Serial.println("3");
-      break;
-    case 0xF708FF00:
-      Serial.println("4");
-      break;
-    case 0xE31CFF00:
-      Serial.println("5");
-      opened = false;
-      break;
-    case 0xA55AFF00:
-      Serial.println("6");
-      break;
-    case 0xBD42FF00:
-      Serial.println("7");
-      break;
-    case 0xAD52FF00:
-      Serial.println("8");
-      break;
-    case 0xB54AFF00:
-      Serial.println("9");
-      break;
-    default:
-      Serial.println("error");
-    }
-    IrReceiver.resume();
-  }
-
   if (opened && currentMillis - previousMillis >= toneDuration)
   {
     previousMillis = currentMillis;
     tone(alarmPin, melody[currentFrequency], toneDuration);
     currentFrequency = currentFrequency == 0 ? 1 : 0;
+
+    if (reedState  && IrReceiver.decode())
+  {
+    // Print Code in HEX
+    switch (IrReceiver.decodedIRData.decodedRawData)
+    {
+    case 0xBA45FF00:
+    {
+      int codeNumber = code.size() == 4 ? code[0] * 1000 + code[1] * 100 + code[2] * 10 + code[3] : 0;
+      if (code.size() == 4 && codeNumber == combination && reedState)
+        opened = false;
+      break;
+    }
+    case 0xBB44FF00:
+      if (code.size() != 0)
+        code.clear();
+      break;
+    case 0xE916FF00:
+      if (code.size() != 4)
+        code.push_back(0);
+      break;
+    case 0xF30CFF00:
+      if (code.size() != 4)
+        code.push_back(1);
+      break;
+    case 0xE718FF00:
+      if (code.size() != 4)
+        code.push_back(2);
+      break;
+    case 0xA15EFF00:
+      if (code.size() != 4)
+        code.push_back(3);
+      break;
+    case 0xF708FF00:
+      if (code.size() != 4)
+        code.push_back(4);
+      break;
+    case 0xE31CFF00:
+      if (code.size() != 4)
+        code.push_back(5);
+      break;
+    case 0xA55AFF00:
+      if (code.size() != 4)
+        code.push_back(6);
+      break;
+    case 0xBD42FF00:
+      if (code.size() != 4)
+        code.push_back(7);
+      break;
+    case 0xAD52FF00:
+      if (code.size() != 4)
+        code.push_back(8);
+      break;
+    case 0xB54AFF00:
+      if (code.size() != 4)
+        code.push_back(9);
+      break;
+    }
+    IrReceiver.resume();
+  }
   }
   else if (!reedState)
   {
