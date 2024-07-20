@@ -29,8 +29,7 @@ unsigned int toneDuration = 500;
 LiquidCrystal lcd(7, 6, 5, 4, 3, 2);
 int refreshSpan = 100;
 
-int VCC_ControlPin = 11;
-int GND_ControlPin = 12;
+int PowerControlPin = 11;
 
 void printCode(int currentMillis)
 {
@@ -56,8 +55,7 @@ void setup()
   IrReceiver.begin(RECV_PIN);
 
   lcd.begin(0, 0);
-  digitalWrite(VCC_ControlPin, LOW);
-  digitalWrite(GND_ControlPin, LOW);
+  digitalWrite(PowerControlPin, LOW);
 }
 
 void loop()
@@ -82,11 +80,8 @@ void loop()
     // IR-Signal empfangen
     if (reedState && IrReceiver.decode())
     {
-      if (!digitalRead(GND_ControlPin))
-      {
-        digitalWrite(VCC_ControlPin, HIGH);
-        digitalWrite(GND_ControlPin, HIGH);
-      }
+      if (IrReceiver.decodedIRData.decodedRawData)
+        digitalWrite(PowerControlPin, HIGH);
       // Print Code in HEX
       switch (IrReceiver.decodedIRData.decodedRawData)
       {
@@ -96,8 +91,7 @@ void loop()
         if (code.size() == 4 && codeNumber == combination && reedState)
         {
           opened = false;
-          digitalWrite(VCC_ControlPin, LOW);
-          digitalWrite(GND_ControlPin, LOW);
+          digitalWrite(PowerControlPin, LOW);
 
           if (toneDuration != 500)
           {
